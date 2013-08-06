@@ -39,7 +39,9 @@ this.init = function()
     child.fork("WebScraperNova.js");
   }, null, true, "Europe/Berlin"); 
   
-  
+   new cronJob('00 00 03 * * *', function(){
+    child.fork("ArticlesTweetCount.js");
+  }, null, true, "Europe/Berlin"); 
     
   }
   

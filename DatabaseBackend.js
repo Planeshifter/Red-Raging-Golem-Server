@@ -1434,7 +1434,7 @@ switch(dbase)
   
 var query_decoded = decodeURIComponent(query);
 console.log("bin in query2")
-init_R_string = "setwd(\"/home/martin/node/node-v0.10.4/RedRagingGolemServer\"); require(RSQLite); getwd(); driver <- dbDriver('SQLite'); con <- dbConnect(driver,'" + actual_dbase +  "');  dbGetQuery(con,\"PRAGMA ENCODING = 'UTF-8'\");";
+init_R_string = "setwd(\"/home/martin/node/node-v0.10.4/Red-Raging-Golem-Server\"); require(RSQLite); getwd(); driver <- dbDriver('SQLite'); con <- dbConnect(driver,'" + actual_dbase +  "');  dbGetQuery(con,\"PRAGMA ENCODING = 'UTF-8'\");";
 init_R_string += "x <- dbSendQuery(con,'" + query_decoded + "');";
 init_R_string += filename + "<- fetch(res=x, n=" + n + ");";
 
