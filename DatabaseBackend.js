@@ -23,19 +23,19 @@ Scraper = {};
 
 
 
-var twitterConsumerKey    = 'EpjzrG3byXS8WgqsuvKNgw'; 
-var twitterConsumerSecret = '72p81JaGu7rghYNYt4V5F5Q3Uizz0SWzS8FjdvwYdI'; 
+var twitterConsumerKey    = 'AiMqJjr09o5jN0jPq4VViA'; 
+var twitterConsumerSecret = 'njgULZTuPBRjCkogYQS1lyDRqllUoFt4LyentZ1u7zo'; 
 
 var oa = new OAuth("https://api.twitter.com/oauth/request_token",
     "https://api.twitter.com/oauth/access_token",
     twitterConsumerKey,
     twitterConsumerSecret,
     "1.0A",
-    "http://toskana.ludicmedia.de/auth/twitter/callback",
+    "http://www.philipp-burckhardt.com/auth/twitter/callback",
     "HMAC-SHA1");
     
-var access_token_key = '206795751-SR9LnpG1RwNXwoqDf3Y1Z3Is4sdoHaAkosEoszew';
-var access_token_secret = '529vBAUMretn5KjByOlJhWsRjRAtMAXaloMRBQjMHo';
+var access_token_key = '206795751-lQUs1Lck75BjvbmkoYhZ7Vkafpw9j7lQHoOGgsNi';
+var access_token_secret = 'Ojh1P00DBi2QDojEa8lvavPdOpvIaHhxbk4o9Npw';
 
 
 if (oa) console.log("oa existiert" + typeof(oa));
@@ -1273,7 +1273,7 @@ this.get_all_links = function(src)
   }).done(function(data) 
     {   
     console.log("success" + data.query.count); 
-    self.create_article_links(src, data.query.results);
+    if (data.query.count > 0) self.create_article_links(src, data.query.results);
     
     self.source_it++;
     self.get_links_for_sources();
@@ -1683,6 +1683,31 @@ tweet_db.all(stmt, function(err, rows) {
   
 }
 
+function load_rss_processes(response)
+{
+var stmt = 'SELECT * FROM rss_source' 
+var list = [];
+
+db.all(stmt, function(err, rows) {
+       
+        rows.forEach(function (obj) {           
+        list.push(obj);
+        });
+   
+     response.writeHead(200, {
+      'Content-Type':  'application/json',
+      'Access-Control-Allow-Origin' : '*',
+     });
+   
+    console.log("ALLES EINGELADEN" + list.length)  
+
+    var msg = JSON.stringify(list);
+    console.log(util.inspect(list));
+    response.end(msg);  
+    });
+  
+}
+
 // Create the server. 
 http.createServer(function (request, response) { 
 
@@ -1703,6 +1728,10 @@ http.createServer(function (request, response) {
                
         case "/all_search_processes":  
           load_search_processes(response);
+        break;
+        
+        case "/all_rss_processes":
+          load_rss_processes(response);         
         break;
         
         case "/get_package":

@@ -2,7 +2,7 @@ var sqlite3 = require('sqlite3').verbose();
 var $       = require('jquery'); 
 var util    = require('util');
 var winston = require('winston');
-
+var cheerio = require("cheerio");
 
 
   var logger = new (winston.Logger)({
@@ -14,7 +14,16 @@ var winston = require('winston');
 
 logger.log('info', 'WINSTON'); 
  
-
+Array.prototype.StringConcatenate = function()
+{
+var s = "";
+for (var i = 0; i < this.length; i++)
+  {
+  s += this[i];
+  if (i != this.length - 1 ) s += " ";
+  }
+return s;
+};
 
 String.prototype.stripTags = function () {
    return this.replace(/<([^>]+)>/g,'');
@@ -219,6 +228,7 @@ this.create_new_article = function(src, plaintext)
   var obj = {};
   obj.url = self.get_url(alink);     
   obj.content = plaintext;  
+  obj.links = encodeURI(JSON.stringify(src.links))
 
   if (alink.description ) obj.abstract     = alink.description;
   if (alink.title )       obj.title        = alink.title; 
@@ -239,7 +249,7 @@ this.create_new_article = function(src, plaintext)
   obj.clean_url                           = alink.clean_url;
   
   
-  var stm = 'INSERT INTO Article(url, title, content, abstract, pub_date, load_date, published_in, clean_url) VALUES("' + obj.url + '","' +    obj.title + '","' + obj.content + '","' + obj.abstract + '","' + obj.pub_date +  '","' + obj.load_date + '","' + obj.published_in + '","' + obj.clean_url + '")'; 
+  var stm = 'INSERT INTO Article(url, title, content, abstract, pub_date, load_date, published_in, clean_url,links) VALUES("' + obj.url + '","' +    obj.title + '","' + obj.content + '","' + obj.abstract + '","' + obj.pub_date +  '","' + obj.load_date + '","' + obj.published_in + '","' + obj.clean_url + '","' + obj.links + '")'; 
 
   
  console.log(stm);  
@@ -321,9 +331,7 @@ this.get_clean_url = function(src, plain_text)
     
     
   }
-
-
-
+  
 // holt die XML Daten der einzelnen Artikel
 this.yql_get_article = function(src, yql_query)
   {
@@ -332,9 +340,32 @@ this.yql_get_article = function(src, yql_query)
   
   	$.getJSON(
 		  yql_query, 
-		  function(data){		 
-		    
-        var plain_text = data.results[0];
+		  function(data){		
+        console.log("Laenge des Arrays:" + data.results.length);
+        var plain_text = "";
+        for (var i = 0; i < data.results.length; i++)
+          {
+          plain_text += data.results[i];  
+          }
+        console.log(plain_text);
+        debugger; // previous bug: whole content body was not kept
+        console.log("************************ EOF *************")
+        console.log("hole links for network");
+        console.log("======================");
+        link_list = [];
+        var ch = cheerio.load(plain_text);
+        
+        ch("a").each(function() {
+          var link = ch(this);
+          var text = link.text();
+          var href = link.attr("href");
+          link_list.push(href);
+          console.log(text + " -> " + href);
+          });
+        console.log(util.inspect(link_list)); 
+        console.log("=====================")
+        
+        src.links = link_list;
         plain_text   = self.cleansing(plain_text);
         
         self.get_clean_url(src, plain_text);
@@ -422,16 +453,23 @@ this.existing_articles = function(src)
   var list = [];
   
   self.db.all(stmt, function(err, rows) {
-        rows.forEach(function (row) {
-  	    var url 				= row.url;	
-		    list.push(url);
-            
-            
-        console.log(url);
-        });
+        if (rows.length == 0) 
+          {
+          console.log("Source does not contain any articles.")
+          }
+        else
+          {
+          rows.forEach(function (row) {
+    	    var url 				= row.url;	
+  		    list.push(url);
+              
+              
+          console.log(url);
+          });
+          }
    
     src.last_stored_links = list;
-    console.log("Urls sind eingelesen ");
+    console.log("URLs for source are fully loaded");
     
     for (var i = 0; i < src.article_links.length; i++)
       {
@@ -506,8 +544,7 @@ this.get_all_links = function(src)
 this.create_article_links = function(src, results)
   {
   if (!results) console.log("LEERES RESULT " + src.name);
- 
-  src.article_links = results.item;
+  else src.article_links = results.item;
   }
  
  
